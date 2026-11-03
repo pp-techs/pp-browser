@@ -74,12 +74,9 @@ jobs:
       # unpacked build skips. `beforeBuildCommand` (scripts/prepare.mjs) fetches the Bun sidecar.
       - name: Package (Linux installers)
         working-directory: apps/desktop
-        env:
-          # Makes the linuxdeploy AppImage self-extract so it runs without FUSE on Ubuntu runners.
-          APPIMAGE_EXTRACT_AND_RUN: "1"
         run: |
-          vp exec tauri build --bundles appimage,deb
-          test -n "$(find src-tauri/target/release/bundle/appimage -name '*.AppImage')"
+          # AppImage needs linuxdeploy (FUSE), which fails on the runner; deb is reliable.
+          vp exec tauri build --bundles deb
           test -n "$(find src-tauri/target/release/bundle/deb -name '*.deb')"
 
   # Windows installer (NSIS), unsigned and never run: proves the Tauri config on Windows.

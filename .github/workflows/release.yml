@@ -187,7 +187,9 @@ jobs:
           - name: Linux x64
             runner: ubuntu-latest
             platform: linux-x64
-            bundles: appimage,deb
+            # AppImage needs linuxdeploy, which fails on GitHub's Ubuntu 24.04 runners (no FUSE
+            # kernel module). deb is pure Rust and reliable; see docs/release-process.md.
+            bundles: deb
             artifact: installers-linux-x64
     steps:
       - name: Checkout

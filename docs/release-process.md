@@ -30,7 +30,7 @@ flowchart LR
 1. Every push to `main` runs `plan`. With pending changesets it opens or updates the **chore(release): version packages** PR: versions bumped, changesets consumed, CHANGELOGs written. Edit the root `CHANGELOG.md` section in that PR if the notes need polish.
 2. Merging that PR is the release. `plan` sees a version whose CHANGELOG section exists and that has no GitHub Release, then:
    - `verify` checks lockstep versions, runs `vp check`, and extracts the notes;
-   - `package` builds installers on GitHub-hosted runners: `.dmg` for macOS arm64 and x64, NSIS `.exe` for Windows x64, `.AppImage` + `.deb` for Linux x64 (names: `pp-browser-<version>-<os>-<arch>.<ext>`);
+   - `package` builds installers on GitHub-hosted runners: `.dmg` for macOS arm64 and x64, NSIS `.exe` for Windows x64, `.deb` for Linux x64 (names: `pp-browser-<version>-<os>-<arch>.<ext>`);
    - `publish` (environment `release`) creates tag `vX.Y.Z` and the GitHub Release with every installer and `SHA256SUMS.txt`. Versions with a pre-release suffix (`0.2.0-rc.1`) are marked as pre-releases.
 3. A failed run is retried by re-running the failed jobs; an existing tag or Release is left alone.
 
@@ -54,7 +54,7 @@ Signing is not configured yet. Builds are ad-hoc signed: macOS apps open via rig
 
 ## Not verified
 
-Only the macOS arm64 build has been exercised end to end. The Windows and Linux installer paths, and macOS x64, follow the documented Tauri setup but have not been run here; expect to debug the first release run (for example with a pre-release tag) before relying on it.
+Only the macOS arm64 build has been exercised end to end (locally). The Windows, macOS x64, and Linux installer paths follow the documented Tauri setup and run in CI, but the installed app has not been smoke-tested on each. Linux ships a `.deb` only: the AppImage target needs `linuxdeploy`, which fails to launch on GitHub's Ubuntu 24.04 runners (no FUSE kernel module). Revisit AppImage (and add `.rpm`) when FUSE is available on the runner, e.g. with `ubuntu-22.04` or a self-hosted runner.
 
 ## Updating workflow dependencies
 
