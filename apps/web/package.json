@@ -1,0 +1,33 @@
+{
+  "name": "@ppb/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev",
+    "build": "vp build",
+    "preview": "vp preview",
+    "astryx": "node node_modules/@astryxdesign/cli/clients/cli/bin/astryx.mjs"
+  },
+  "dependencies": {
+    "@astryxdesign/core": "catalog:",
+    "@astryxdesign/theme-neutral": "catalog:",
+    "@ppb/shared": "workspace:*",
+    "@stylexjs/stylex": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-router": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@astryxdesign/cli": "catalog:",
+    "@tanstack/router-plugin": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

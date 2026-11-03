@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.3/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    ["@ppb/cli", "@ppb/desktop", "@ppb/web", "@ppb/core", "@ppb/shared", "@ppb/mcp", "@ppb/server"]
+  ],
+  "linked": [],
+  "access": "restricted",
+  "baseBranch": "main",
+  "privatePackages": { "version": true, "tag": false },
+  "updateInternalDependencies": "patch",
+  "ignore": []
+}

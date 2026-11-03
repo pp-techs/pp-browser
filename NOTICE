@@ -1,0 +1,12 @@
+pp-browser
+Copyright 2026 PP Techs
+
+This product includes software developed by PP Techs (https://github.com/pp-techs).
+
+pp-browser is built on Camoufox (https://camoufox.com), a hardened Firefox fork, Playwright
+(https://playwright.dev), Tauri (https://tauri.app), and other open-source packages listed in the
+package manifests; their licenses are included in the distributed application.
+
+The desktop app and CLI download the pinned Camoufox browser build and a Bun runtime binary
+(https://bun.sh) on first use; these are separate programs started by the app, not linked into it,
+and are not modified.

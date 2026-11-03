@@ -1,0 +1,39 @@
+{
+  "name": "pp-browser",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Multi-profile anti-detect browser manager: profiles, proxies, web UI and MCP.",
+  "homepage": "https://github.com/pp-techs/pp-browser#readme",
+  "bugs": {
+    "url": "https://github.com/pp-techs/pp-browser/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pp-techs/pp-browser.git"
+  },
+  "type": "module",
+  "scripts": {
+    "ready": "vp check && vp run -r test && vp run -r build",
+    "build": "vp run -r build",
+    "dev:web": "vp run @ppb/web#dev",
+    "ppb": "node apps/cli/src/main.ts",
+    "changeset": "changeset",
+    "version-packages": "node scripts/version-packages.ts"
+  },
+  "devDependencies": {
+    "@changesets/cli": "catalog:",
+    "@types/node": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.16.1",
+      "onFail": "download"
+    }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}

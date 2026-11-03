@@ -1,0 +1,39 @@
+{
+  "name": "@ppb/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ppb: multi-profile anti-detect browser manager (CLI, daemon, MCP, web UI)",
+  "bin": {
+    "ppb": "./dist/main.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "vp pack",
+    "dev": "node src/main.ts"
+  },
+  "dependencies": {
+    "@fastify/static": "catalog:",
+    "@modelcontextprotocol/fastify": "catalog:",
+    "@modelcontextprotocol/node": "catalog:",
+    "@modelcontextprotocol/server": "catalog:",
+    "camoufox-js": "catalog:",
+    "commander": "catalog:",
+    "fastify": "catalog:",
+    "playwright-core": "catalog:",
+    "proxy-chain": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@ppb/core": "workspace:*",
+    "@ppb/mcp": "workspace:*",
+    "@ppb/server": "workspace:*",
+    "@ppb/shared": "workspace:*",
+    "@ppb/web": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

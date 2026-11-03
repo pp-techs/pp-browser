@@ -1,0 +1,15 @@
+{
+  "name": "@ppb/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ppb desktop app: Tauri shell around the ppb daemon + web UI",
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.9.2",
+    "adm-zip": "^0.5.16"
+  }
+}

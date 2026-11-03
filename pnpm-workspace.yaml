@@ -1,0 +1,60 @@
+packages:
+  - apps/*
+  - packages/*
+
+catalogMode: prefer
+
+catalog:
+  "@astryxdesign/cli": ^0.7.6
+  "@astryxdesign/core": ^0.7.6
+  "@changesets/cli": ^3.0.3
+  "@astryxdesign/theme-neutral": ^0.7.6
+  "@fastify/static": ^10.1.8
+  "@modelcontextprotocol/fastify": ^2.0.1
+  "@modelcontextprotocol/node": ^2.1.2
+  "@modelcontextprotocol/server": ^2.4.0
+  "@stylexjs/stylex": ^0.19.1
+  "@tanstack/react-query": ^5.105.3
+  "@tanstack/react-router": ^1.170.46
+  "@tanstack/router-plugin": ^1.168.48
+  "@types/node": ^26.6.6
+  "@types/react": ^19.3.0
+  "@types/react-dom": ^19.3.0
+  "@vitejs/plugin-react": ^6.2.1
+  camoufox-js: ^0.13.0
+  commander: ^15.0.0
+  fingerprint-generator: ^2.1.89
+  fastify: ^5.12.8
+  # camoufox-js 0.13 pins its peer to playwright-core <1.63 (Juggler protocol must match the Camoufox build).
+  playwright-core: ~1.62.1
+  proxy-chain: ^3.0.1
+  react: ^19.3.1
+  react-dom: ^19.3.1
+  typescript: ^7.0.2
+  vite: npm:@voidzero-dev/vite-plus-core@1.4.0
+  vite-plus: 1.4.0
+  zod: ^4.6.7
+
+overrides:
+  vite@*: "catalog:"
+
+peerDependencyRules:
+  allowAny:
+    - vite
+  allowedVersions:
+    vite: "*"
+
+allowBuilds:
+  better-sqlite3: true
+  # postinstall only prints a "run astryx init" hint; not needed.
+  "@astryxdesign/cli": false
+  "@astryxdesign/core": false
+
+minimumReleaseAgeExclude:
+  - "@tanstack/query-core@5.105.3"
+  - "@tanstack/react-query@5.105.3"
+  - "@vitejs/plugin-react@6.2.1"
+  - fastify@5.12.8
+  - "@astryxdesign/cli@0.7.6"
+  - "@astryxdesign/core@0.7.6"
+  - "@astryxdesign/theme-neutral@0.7.6"

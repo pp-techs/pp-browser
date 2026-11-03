@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check (format, lint, typecheck)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          node-version-file: .node-version
+          cache: true
+
+      - name: Check
+        run: vp check
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          node-version-file: .node-version
+          cache: true
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "apps/desktop/src-tauri -> target"
+
+      - name: Build renderer and daemon
+        run: vp run -r build
+
+      # Proves the Tauri config on every change, including target-specific bundler checks an
+      # unpacked build skips. `beforeBuildCommand` (scripts/prepare.mjs) fetches the Bun sidecar.
+      - name: Package (Linux installers)
+        working-directory: apps/desktop
+        run: |
+          vp exec tauri build --bundles appimage,deb
+          test -n "$(find src-tauri/target/release/bundle/appimage -name '*.AppImage')"
+          test -n "$(find src-tauri/target/release/bundle/deb -name '*.deb')"
+
+  # Windows installer (NSIS), unsigned and never run: proves the Tauri config on Windows.
+  build-windows:
+    name: Build (Windows installer)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          node-version-file: .node-version
+          cache: true
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "apps/desktop/src-tauri -> target"
+
+      - name: Build renderer and daemon
+        run: vp run -r build
+
+      - name: Package (Windows installer)
+        working-directory: apps/desktop
+        run: |
+          vp exec tauri build --bundles nsis
+          if (-not (Get-ChildItem -Path src-tauri/target/release/bundle/nsis -Filter *.exe -ErrorAction SilentlyContinue)) { throw "no NSIS installer" }
+
+  changeset:
+    name: Changeset
+    if: github.event_name == 'pull_request' && github.head_ref != 'changeset-release/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Advisory: app changes usually need a changeset (docs, CI, and refactors do not).
+      - name: Look for a changeset
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          changed=$(git diff --name-only "$BASE"...HEAD)
+          if grep -E '^\.changeset/[^/]+\.md$' <<< "$changed" | grep -qvxF .changeset/README.md; then
+            echo "Changeset found."
+          elif grep -qE '^(apps|packages)/' <<< "$changed"; then
+            echo "::warning::This PR changes app code but adds no changeset. Run \`vp run changeset\` if users will notice the change."
+          else
+            echo "No app changes."
+          fi
