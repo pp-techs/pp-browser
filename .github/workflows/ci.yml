@@ -50,6 +50,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
             libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+          # linuxdeploy is an AppImage and needs FUSE to mount; best-effort across Ubuntu versions.
+          sudo apt-get install -y libfuse2t64 || sudo apt-get install -y libfuse2 || true
 
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
@@ -72,6 +74,9 @@ jobs:
       # unpacked build skips. `beforeBuildCommand` (scripts/prepare.mjs) fetches the Bun sidecar.
       - name: Package (Linux installers)
         working-directory: apps/desktop
+        env:
+          # Makes the linuxdeploy AppImage self-extract so it runs without FUSE on Ubuntu runners.
+          APPIMAGE_EXTRACT_AND_RUN: "1"
         run: |
           vp exec tauri build --bundles appimage,deb
           test -n "$(find src-tauri/target/release/bundle/appimage -name '*.AppImage')"
