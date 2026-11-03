@@ -49,12 +49,12 @@ function LoginPage() {
       <VStack gap={4} hAlign="center" style={{ width: "100%", maxWidth: 420 }}>
         <VStack gap={2} hAlign="center">
           <Icon icon={LogoIcon} size="lg" />
-          <Heading level={2}>pp-browser</Heading>
+          <Heading level={2}>PP Browser</Heading>
         </VStack>
         <Card padding={6} width="100%">
           {isDesktopApp() ? (
             <Text type="supporting">
-              The app's session expired. Quit and reopen pp-browser to reconnect.
+              The app's session expired. Quit and reopen PP Browser to reconnect.
             </Text>
           ) : (
             <form onSubmit={submit}>

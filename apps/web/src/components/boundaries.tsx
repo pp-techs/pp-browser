@@ -32,7 +32,7 @@ export function NotFoundView() {
     <Center axis="both" padding={8} style={{ minHeight: "100%" }}>
       <EmptyState
         title="Page not found"
-        description="This address does not match anything in pp-browser."
+        description="This address does not match anything in PP Browser."
         actions={<Button label="Back to profiles" variant="primary" href="/profiles" />}
       />
     </Center>

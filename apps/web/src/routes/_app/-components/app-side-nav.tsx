@@ -1,7 +1,13 @@
 import { NavIcon } from "@astryxdesign/core/NavIcon";
 import { SideNav, SideNavHeading, SideNavItem, SideNavSection } from "@astryxdesign/core/SideNav";
 import { useRouterState } from "@tanstack/react-router";
-import { ConnectIcon, LogoIcon, ProfilesIcon, ProxiesIcon } from "../../../components/icons.tsx";
+import {
+  ConnectIcon,
+  LogoIcon,
+  ProfilesIcon,
+  ProxiesIcon,
+  SettingsIcon,
+} from "../../../components/icons.tsx";
 
 const ITEMS = [
   { label: "Profiles", href: "/profiles", icon: ProfilesIcon },
@@ -9,7 +15,11 @@ const ITEMS = [
   { label: "MCP / API", href: "/connect", icon: ConnectIcon },
 ] as const;
 
-export function AppSideNav() {
+export interface AppSideNavProps {
+  onOpenSettings: () => void;
+}
+
+export function AppSideNav({ onOpenSettings }: AppSideNavProps) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
     <SideNav
@@ -17,10 +27,11 @@ export function AppSideNav() {
       collapsible
       header={
         <SideNavHeading
-          heading="pp-browser"
+          heading="PP Browser"
           icon={<NavIcon icon={<LogoIcon width={16} height={16} />} />}
         />
       }
+      footer={<SideNavItem label="Settings" icon={SettingsIcon} onClick={onOpenSettings} />}
     >
       <SideNavSection title="Manage" isHeaderHidden>
         {ITEMS.map((item) => (

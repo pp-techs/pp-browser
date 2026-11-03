@@ -1,4 +1,4 @@
-# pp-browser
+# PP Browser
 
 Multi-profile anti-detect browser manager. Each profile has its own persistent fingerprint, cookies/storage and proxy, and runs as a separate [Camoufox](https://camoufox.com) (Firefox) process. Manage profiles from the `ppb` CLI, a local web UI, or let agents drive them over MCP / REST.
 

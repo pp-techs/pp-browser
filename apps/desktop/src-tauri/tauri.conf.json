@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "pp-browser",
+  "productName": "PP Browser",
   "version": "0.1.0",
   "identifier": "com.ppbrowser.desktop",
   "build": {
@@ -12,9 +12,9 @@
     "windows": [
       {
         "label": "main",
-        "title": "pp-browser",
-        "width": 1200,
-        "height": 800,
+        "title": "PP Browser",
+        "width": 1440,
+        "height": 900,
         "minWidth": 720,
         "minHeight": 480,
         "resizable": true,
