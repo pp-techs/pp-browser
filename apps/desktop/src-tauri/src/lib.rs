@@ -10,8 +10,10 @@ use tauri_plugin_shell::ShellExt;
 /// Mirrors `DaemonInfo` written by the Node daemon at `~/.ppb/daemon.json`.
 #[derive(Deserialize)]
 struct DaemonInfo {
+  pid: u32,
   host: String,
   port: u16,
+  version: String,
 }
 
 /// pid of the spawned daemon sidecar, set once in `setup` and read on window close.
@@ -57,14 +59,44 @@ fn terminate_pid(pid: u32) {
     .status();
 }
 
-async fn wait_for_daemon_ready() -> Option<DaemonInfo> {
+/// True when the daemon answers `GET /` with 200, i.e. it can actually serve the web UI. A daemon
+/// whose bundle was replaced or deleted keeps running but answers 404.
+fn serves_ui(host: &str, port: u16) -> bool {
+  use std::io::{Read, Write};
+  let Ok(mut stream) = std::net::TcpStream::connect((host, port)) else {
+    return false;
+  };
+  let timeout = Some(Duration::from_secs(2));
+  let _ = stream.set_read_timeout(timeout);
+  let _ = stream.set_write_timeout(timeout);
+  let request = format!("GET / HTTP/1.1\r\nHost: {host}:{port}\r\nConnection: close\r\n\r\n");
+  if stream.write_all(request.as_bytes()).is_err() {
+    return false;
+  }
+  let mut head = [0u8; 12];
+  stream.read_exact(&mut head).is_ok() && head.starts_with(b"HTTP/1.1 200")
+}
+
+/// Stops a daemon that cannot serve this app and waits for its port to close.
+async fn stop_stale_daemon(info: &DaemonInfo) {
+  terminate_pid(info.pid);
+  let deadline = std::time::Instant::now() + Duration::from_secs(10);
+  while std::time::Instant::now() < deadline {
+    if std::net::TcpStream::connect((info.host.as_str(), info.port)).is_err() {
+      return;
+    }
+    tokio::time::sleep(Duration::from_millis(200)).await;
+  }
+}
+
+/// Waits for the daemon to listen. With `expected_pid`, only a daemon started by this app counts,
+/// so a stale `daemon.json` from an earlier run is never mistaken for ours.
+async fn wait_for_daemon_ready(expected_pid: Option<u32>) -> Option<DaemonInfo> {
   let deadline = std::time::Instant::now() + Duration::from_secs(30);
   while std::time::Instant::now() < deadline {
     if let (Some(info), Some(_token)) = (read_daemon_info(), read_token()) {
-      let addr = format!("{}:{}", info.host, info.port);
-      // `daemon.json` is written once the HTTP server is already listening, but
-      // probe the socket too in case this read raced a slow machine's fsync.
-      if std::net::TcpStream::connect(&addr).is_ok() {
+      let ours = expected_pid.is_none_or(|pid| pid == info.pid);
+      if ours && serves_ui(&info.host, info.port) {
         return Some(info);
       }
     }
@@ -137,15 +169,36 @@ pub fn run() {
       }
 
       let handle = app.handle().clone();
-      let pid = spawn_daemon(&handle)?;
-      *app.state::<DaemonPid>().0.lock().unwrap() = Some(pid);
-
+      let app_version = app.package_info().version.to_string();
       let window = handle
         .get_webview_window("main")
         .expect("main window must exist");
 
       tauri::async_runtime::spawn(async move {
-        match wait_for_daemon_ready().await {
+        // Reuse a running daemon only if it matches this app and serves the UI; anything else
+        // (older version, deleted bundle, started without the web UI) is replaced.
+        let mut expected_pid = None;
+        match read_daemon_info() {
+          Some(info) if info.version == app_version && serves_ui(&info.host, info.port) => {}
+          existing => {
+            if let Some(info) = existing {
+              stop_stale_daemon(&info).await;
+            }
+            match spawn_daemon(&handle) {
+              Ok(pid) => {
+                *handle.state::<DaemonPid>().0.lock().unwrap() = Some(pid);
+                expected_pid = Some(pid);
+              }
+              Err(error) => {
+                let message = format!("ppb failed to start: {error}");
+                let _ = window.eval(format!("document.body.textContent = {message:?};"));
+                return;
+              }
+            }
+          }
+        }
+
+        match wait_for_daemon_ready(expected_pid).await {
           Some(info) => {
             let token = read_token().unwrap_or_default();
             let url = format!("http://{}:{}/#token={}", info.host, info.port, token);
