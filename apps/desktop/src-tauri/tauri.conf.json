@@ -2,9 +2,9 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "pp-browser",
   "version": "0.1.0",
-  "identifier": "com.ppbrowser.app",
+  "identifier": "com.ppbrowser.desktop",
   "build": {
-    "frontendDist": "../dist",
+    "frontendDist": "../frontend",
     "beforeDevCommand": "node scripts/prepare.mjs",
     "beforeBuildCommand": "node scripts/prepare.mjs"
   },
