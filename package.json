@@ -1,6 +1,6 @@
 {
   "name": "pp-browser",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Multi-profile anti-detect browser manager: profiles, proxies, web UI and MCP.",
   "homepage": "https://github.com/pp-techs/pp-browser#readme",

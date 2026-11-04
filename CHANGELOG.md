@@ -4,6 +4,12 @@ All notable changes to pp-browser are documented here. Each section becomes a Gi
 
 <!-- `vp run version-packages` adds each release's section from its changesets; edit it in the Version Packages PR. -->
 
+## [0.3.0] — 2026-11-04
+
+Move to the official `camoufox` package and Camoufox 158.0.1 (beta.41), up from camoufox-js 0.13 and Firefox 152. `ppb setup` downloads the new browser build (about 1.3 GB). An existing profile gets a new fingerprint the first time it is launched after the update; its cookies and browsing data are kept, but sites will see a different device.
+
+Add workflows: package a sequence of browser steps (goto, click, type, wait, extract, if/switch with optional steps and per-step failure handling) so agents replay it in a later session instead of relearning the site. Create them by recording an agent session, having an agent write one, or importing JSON. Run them with `run_workflow`, `ppb workflow run`, or the new Workflows page in the web UI.
+
 ## [0.2.0] — 2026-11-03
 
 Fix the desktop app showing "404 Not Found" on launch when an older or web-less ppb daemon was already running. The app now replaces a daemon that is a different version or cannot serve the UI, and waits for the daemon it started itself.
