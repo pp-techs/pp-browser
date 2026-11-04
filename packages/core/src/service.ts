@@ -524,7 +524,14 @@ export class CoreService implements PpbApi {
     let snapshot: string | undefined;
     if (outcome.status !== "succeeded") {
       snapshot = await page.ariaSnapshot({ mode: "ai" }).catch(() => undefined);
-      if (snapshot !== undefined) session.rememberSnapshot(page, snapshot);
+      if (snapshot !== undefined) {
+        // A typed field shows its value in the snapshot; keep secret parameters out of what the caller sees.
+        for (const [name, param] of Object.entries(row.definition.params)) {
+          const value = param.type === "secret" ? String(params[name] ?? "") : "";
+          if (value) snapshot = snapshot.split(value).join("***");
+        }
+        session.rememberSnapshot(page, snapshot);
+      }
     }
 
     const info = await session.info(page);

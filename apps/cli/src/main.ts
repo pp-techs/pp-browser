@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFile } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { engineStatus, installEngine, resolvePaths } from "@ppb/core";
 import { createPpMcpServer } from "@ppb/mcp";
@@ -541,6 +541,7 @@ workflow
         keepPage: opts.keepPage,
         headless: opts.headed ? false : undefined,
       });
+      if (result.screenshots.length > 0) mkdirSync(opts.screenshots, { recursive: true });
       for (const shot of result.screenshots) {
         const path = join(opts.screenshots, `${wfRef}-${shot.stepId}.png`);
         writeFileSync(path, Buffer.from(shot.data, "base64"));
