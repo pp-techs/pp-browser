@@ -17,12 +17,14 @@ import {
   pageRefSchema,
   PpbError,
   pressSchema,
+  runWorkflowSchema,
   screenshotSchema,
   startProfileSchema,
   typeSchema,
   updateProfileSchema,
   updateProxySchema,
   waitForSchema,
+  workflowDefinitionSchema,
 } from "@ppb/shared";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import * as z from "zod";
@@ -140,6 +142,28 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
   });
   app.post("/api/proxies/:ref/check", (req) =>
     service.checkProxy(parse(refParams, req.params).ref),
+  );
+
+  // ── workflows ──────────────────────────────────────────────────────────
+  app.get("/api/workflows", () => service.listWorkflows());
+  app.post("/api/workflows", (req) =>
+    service.saveWorkflow(parse(workflowDefinitionSchema, req.body)),
+  );
+  app.get("/api/workflows/:ref", (req) => service.getWorkflow(parse(refParams, req.params).ref));
+  app.delete("/api/workflows/:ref", async (req, reply) => {
+    await service.deleteWorkflow(parse(refParams, req.params).ref);
+    return reply.code(204).send();
+  });
+  app.post("/api/workflows/:ref/run", (req) =>
+    service.runWorkflow(parse(refParams, req.params).ref, parse(runWorkflowSchema, req.body)),
+  );
+
+  app.post("/api/profiles/:ref/recording", async (req, reply) => {
+    await service.startRecording(parse(refParams, req.params).ref);
+    return reply.code(204).send();
+  });
+  app.delete("/api/profiles/:ref/recording", (req) =>
+    service.stopRecording(parse(refParams, req.params).ref),
   );
 
   // ── MCP (Streamable HTTP) ─────────────────────────────────────────────

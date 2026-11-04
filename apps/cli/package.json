@@ -19,7 +19,7 @@
     "@modelcontextprotocol/fastify": "catalog:",
     "@modelcontextprotocol/node": "catalog:",
     "@modelcontextprotocol/server": "catalog:",
-    "camoufox-js": "catalog:",
+    "camoufox": "catalog:",
     "commander": "catalog:",
     "fastify": "catalog:",
     "playwright-core": "catalog:",

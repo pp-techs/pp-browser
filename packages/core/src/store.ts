@@ -1,5 +1,5 @@
 import type { DatabaseSync, SQLInputValue } from "node:sqlite";
-import type { ProxyCheck } from "@ppb/shared";
+import type { ProfileOs, ProxyCheck, WorkflowDefinition } from "@ppb/shared";
 import type { Identity } from "./camoufox.ts";
 
 export interface ProxyRow {
@@ -23,6 +23,35 @@ export interface ProfileRow {
   updatedAt: string;
   lastOpenedAt: string | null;
 }
+
+export interface WorkflowRow {
+  id: string;
+  name: string;
+  version: number;
+  definition: WorkflowDefinition;
+  definitionJson: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface RawWorkflow {
+  id: string;
+  name: string;
+  current_version: number;
+  definition: string;
+  created_at: string;
+  updated_at: string;
+}
+
+const toWorkflow = (r: RawWorkflow): WorkflowRow => ({
+  id: r.id,
+  name: r.name,
+  version: r.current_version,
+  definition: JSON.parse(r.definition) as WorkflowDefinition,
+  definitionJson: r.definition,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+});
 
 interface RawProxy {
   id: string;
@@ -53,13 +82,38 @@ const toProxy = (r: RawProxy): ProxyRow => ({
   lastCheck: r.last_check ? (JSON.parse(r.last_check) as ProxyCheck) : null,
 });
 
+/** Identities written before the move to the official camoufox package (BrowserForge fingerprint inline). */
+interface LegacyIdentity {
+  version: 1;
+  os: ProfileOs;
+  fingerprint: { navigator: { userAgent: string }; screen: { width: number; height: number } };
+  webgl: { vendor: string; renderer: string };
+  locale: { country: string; value: string } | null;
+}
+
+/** Version 1 rows have no `summary`; read what the UI shows from their old fields until they are replaced. */
+function toIdentity(json: string): Identity {
+  const raw = JSON.parse(json) as Identity | LegacyIdentity;
+  if (raw.version === 2) return raw;
+  return {
+    version: 2,
+    os: raw.os,
+    summary: {
+      userAgent: raw.fingerprint.navigator.userAgent,
+      screen: { width: raw.fingerprint.screen.width, height: raw.fingerprint.screen.height },
+      webgl: raw.webgl,
+    },
+    locale: raw.locale,
+  };
+}
+
 const toProfile = (r: RawProfile): ProfileRow => ({
   id: r.id,
   name: r.name,
   group: r.grp,
   notes: r.notes,
   proxyId: r.proxy_id,
-  identity: JSON.parse(r.identity) as Identity,
+  identity: toIdentity(r.identity),
   lastIp: r.last_ip,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
@@ -142,11 +196,11 @@ export class Store {
     return row ? toProfile(row) : null;
   }
 
-  insertProfile(row: ProfileRow): void {
+  insertProfile(row: ProfileRow, fingerprint: Buffer): void {
     this.#db
       .prepare(
-        `INSERT INTO profiles (id, name, grp, notes, proxy_id, identity, last_ip, created_at, updated_at, last_opened_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO profiles (id, name, grp, notes, proxy_id, identity, fingerprint, last_ip, created_at, updated_at, last_opened_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         row.id,
@@ -155,11 +209,20 @@ export class Store {
         row.notes,
         row.proxyId,
         JSON.stringify(row.identity),
+        fingerprint,
         row.lastIp,
         row.createdAt,
         row.updatedAt,
         row.lastOpenedAt,
       );
+  }
+
+  /** The gzip fingerprint blob; read only when a profile launches. */
+  profileFingerprint(id: string): Buffer | null {
+    const row = this.#db.prepare("SELECT fingerprint FROM profiles WHERE id = ?").get(id) as
+      | { fingerprint: Uint8Array | null }
+      | undefined;
+    return row?.fingerprint ? Buffer.from(row.fingerprint) : null;
   }
 
   updateProfile(
@@ -170,6 +233,7 @@ export class Store {
       notes?: string | null;
       proxyId?: string | null;
       identity?: Identity;
+      fingerprint?: Buffer;
       lastIp?: string | null;
       lastOpenedAt?: string;
     },
@@ -183,6 +247,7 @@ export class Store {
       notes: patch.notes,
       proxy_id: patch.proxyId,
       identity: patch.identity && JSON.stringify(patch.identity),
+      fingerprint: patch.fingerprint,
       last_ip: patch.lastIp,
       last_opened_at: patch.lastOpenedAt,
       updated_at: edited ? new Date().toISOString() : undefined,
@@ -191,6 +256,76 @@ export class Store {
 
   deleteProfile(id: string): void {
     this.#db.prepare("DELETE FROM profiles WHERE id = ?").run(id);
+  }
+
+  // ── workflows ───────────────────────────────────────────────────────────
+
+  listWorkflows(): WorkflowRow[] {
+    return (
+      this.#db
+        .prepare(
+          `SELECT w.*, v.definition FROM workflows w
+           JOIN workflow_versions v ON v.workflow_id = w.id AND v.version = w.current_version
+           ORDER BY w.name`,
+        )
+        .all() as unknown as RawWorkflow[]
+    ).map(toWorkflow);
+  }
+
+  findWorkflow(ref: string): WorkflowRow | null {
+    const row = this.#db
+      .prepare(
+        `SELECT w.*, v.definition FROM workflows w
+         JOIN workflow_versions v ON v.workflow_id = w.id AND v.version = w.current_version
+         WHERE w.id = ? OR w.name = ?`,
+      )
+      .get(ref, ref) as RawWorkflow | undefined;
+    return row ? toWorkflow(row) : null;
+  }
+
+  insertWorkflow(
+    row: { id: string; name: string; createdAt: string },
+    definitionJson: string,
+  ): void {
+    this.#db.exec("BEGIN");
+    try {
+      this.#db
+        .prepare(
+          "INSERT INTO workflows (id, name, current_version, created_at, updated_at) VALUES (?, ?, 1, ?, ?)",
+        )
+        .run(row.id, row.name, row.createdAt, row.createdAt);
+      this.#db
+        .prepare(
+          "INSERT INTO workflow_versions (workflow_id, version, definition, created_at) VALUES (?, 1, ?, ?)",
+        )
+        .run(row.id, definitionJson, row.createdAt);
+      this.#db.exec("COMMIT");
+    } catch (error) {
+      this.#db.exec("ROLLBACK");
+      throw error;
+    }
+  }
+
+  addWorkflowVersion(id: string, version: number, definitionJson: string, now: string): void {
+    this.#db.exec("BEGIN");
+    try {
+      this.#db
+        .prepare(
+          "INSERT INTO workflow_versions (workflow_id, version, definition, created_at) VALUES (?, ?, ?, ?)",
+        )
+        .run(id, version, definitionJson, now);
+      this.#db
+        .prepare("UPDATE workflows SET current_version = ?, updated_at = ? WHERE id = ?")
+        .run(version, now, id);
+      this.#db.exec("COMMIT");
+    } catch (error) {
+      this.#db.exec("ROLLBACK");
+      throw error;
+    }
+  }
+
+  deleteWorkflow(id: string): void {
+    this.#db.prepare("DELETE FROM workflows WHERE id = ?").run(id);
   }
 
   #update(

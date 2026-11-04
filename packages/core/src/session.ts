@@ -1,6 +1,7 @@
 import { PpbError, type PageInfo } from "@ppb/shared";
 import type { BrowserContext, Locator, Page } from "playwright-core";
 import type { Forwarder } from "./forwarder.ts";
+import type { Recorder } from "./recorder.ts";
 
 const ACTION_TIMEOUT_MS = 15_000;
 const NAVIGATION_TIMEOUT_MS = 45_000;
@@ -12,8 +13,10 @@ export class Session {
   readonly headless: boolean;
   readonly startedAt: string;
   readonly ip: string;
+  recorder: Recorder | null = null;
   readonly #pages = new Map<string, Page>();
   readonly #ids = new WeakMap<Page, string>();
+  readonly #snapshots = new WeakMap<Page, string>();
   #nextId = 1;
   #activeId: string | null = null;
 
@@ -82,6 +85,14 @@ export class Session {
     await page.close();
   }
 
+  rememberSnapshot(page: Page, text: string): void {
+    this.#snapshots.set(page, text);
+  }
+
+  lastSnapshot(page: Page): string | undefined {
+    return this.#snapshots.get(page);
+  }
+
   async close(): Promise<void> {
     await this.context.close().catch(() => undefined);
     await this.forwarder?.close().catch(() => undefined);
@@ -101,9 +112,12 @@ export class Session {
   }
 }
 
-/** Refs (`e12`, or `f1e12` inside frames/after navigation) come from `ariaSnapshot({ mode: "ai" })`; anything else is a Playwright selector. */
+const REF_PATTERN = /^(f\d+)?e\d+$/;
+export const isRef = (target: string): boolean => REF_PATTERN.test(target);
+
+/** Refs (`e12`, or `f1e5` inside frames/after navigation) come from `ariaSnapshot({ mode: "ai" })`; anything else is a Playwright selector. */
 export function locate(page: Page, target: string): Locator {
-  return /^(f\d+)?e\d+$/.test(target) ? page.locator(`aria-ref=${target}`) : page.locator(target);
+  return isRef(target) ? page.locator(`aria-ref=${target}`) : page.locator(target);
 }
 
 export function normalizeUrl(url: string): string {

@@ -22,10 +22,15 @@ import type {
   Profile,
   Proxy,
   ProxyCheck,
+  RecordingResult,
   ScreenshotResult,
   SnapshotResult,
   SystemStatus,
+  Workflow,
+  WorkflowRunResult,
+  WorkflowSummary,
 } from "./types.ts";
+import type { RunWorkflowInput, WorkflowDefinition } from "./workflow.ts";
 
 export interface PpbClientOptions {
   /** Daemon origin, e.g. http://127.0.0.1:7777. Empty string means same origin (web UI). */
@@ -127,6 +132,28 @@ export class PpbClient implements PpbApi {
     return this.#action(ref, "wait-for", input);
   }
 
+  listWorkflows(): Promise<WorkflowSummary[]> {
+    return this.#call("GET", "/api/workflows");
+  }
+  getWorkflow(ref: string): Promise<Workflow> {
+    return this.#call("GET", workflowPath(ref));
+  }
+  saveWorkflow(definition: WorkflowDefinition): Promise<Workflow> {
+    return this.#call("POST", "/api/workflows", definition);
+  }
+  deleteWorkflow(ref: string): Promise<void> {
+    return this.#call("DELETE", workflowPath(ref));
+  }
+  runWorkflow(ref: string, input: RunWorkflowInput): Promise<WorkflowRunResult> {
+    return this.#call("POST", `${workflowPath(ref)}/run`, input);
+  }
+  startRecording(ref: string): Promise<void> {
+    return this.#call("POST", `${profilePath(ref)}/recording`, {});
+  }
+  stopRecording(ref: string): Promise<RecordingResult> {
+    return this.#call("DELETE", `${profilePath(ref)}/recording`);
+  }
+
   #action<T>(ref: string, action: string, body: unknown): Promise<T> {
     return this.#call("POST", `${profilePath(ref)}/actions/${action}`, body);
   }
@@ -158,3 +185,4 @@ const errorPayload = z.object({ error: z.object({ code: z.string(), message: z.s
 
 const profilePath = (ref: string) => `/api/profiles/${encodeURIComponent(ref)}`;
 const proxyPath = (ref: string) => `/api/proxies/${encodeURIComponent(ref)}`;
+const workflowPath = (ref: string) => `/api/workflows/${encodeURIComponent(ref)}`;

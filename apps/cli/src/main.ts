@@ -1,9 +1,17 @@
 #!/usr/bin/env node
 import { execFile } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { engineStatus, installEngine, resolvePaths } from "@ppb/core";
 import { createPpMcpServer } from "@ppb/mcp";
-import { osSchema, PpbError, type PpbClient, type Profile, type Proxy } from "@ppb/shared";
+import {
+  osSchema,
+  PpbError,
+  workflowDefinitionSchema,
+  type PpbClient,
+  type Profile,
+  type Proxy,
+} from "@ppb/shared";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { Command, InvalidArgumentError, Option } from "commander";
 import pkg from "../package.json" with { type: "json" };
@@ -433,6 +441,140 @@ page
   .action((ref: string, expression: string, opts: { page?: string }) =>
     withPage((api) => api.evaluate(ref, { expression, pageId: opts.page })),
   );
+
+// ── workflows ──────────────────────────────────────────────────────────────
+
+const workflow = program
+  .command("workflow")
+  .alias("workflows")
+  .description("manage reusable workflows");
+
+workflow
+  .command("ls")
+  .description("list workflows")
+  .action(async () => {
+    const list = await (await client()).listWorkflows();
+    out(list, () =>
+      table(
+        list.map((w) => ({
+          name: w.name,
+          id: w.id,
+          version: w.version,
+          steps: w.stepCount,
+          params: Object.keys(w.params).join(",") || null,
+          updated: w.updatedAt,
+        })),
+      ),
+    );
+  });
+
+workflow
+  .command("show <workflow>")
+  .description("show a workflow definition")
+  .action(async (ref: string) => out((await (await client()).getWorkflow(ref)).definition));
+
+workflow
+  .command("save <file>")
+  .description("save a workflow definition from a JSON file ('-' reads stdin)")
+  .action(async (file: string) => {
+    const text = readFileSync(file === "-" ? 0 : file, "utf8");
+    let data: unknown;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      throw new PpbError(
+        "INVALID_INPUT",
+        `Invalid JSON: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+    const parsed = workflowDefinitionSchema.safeParse(data);
+    if (!parsed.success) {
+      throw new PpbError("INVALID_INPUT", parsed.error.message);
+    }
+    const w = await (await client()).saveWorkflow(parsed.data);
+    out(w, () => console.log(`saved ${w.name} v${w.version}`));
+  });
+
+workflow
+  .command("rm <workflow...>")
+  .description("delete workflows")
+  .action(async (refs: string[]) => {
+    for (const ref of refs) await (await client()).deleteWorkflow(ref);
+    console.log(`deleted ${refs.join(", ")}`);
+  });
+
+workflow
+  .command("run <workflow> <profile>")
+  .description("run a workflow on a profile")
+  .option(
+    "-p, --param <key=value>",
+    "parameter (repeatable)",
+    (v: string, prev: Record<string, string>) => {
+      const i = v.indexOf("=");
+      if (i === -1) throw new InvalidArgumentError("expected key=value");
+      return { ...prev, [v.slice(0, i)]: v.slice(i + 1) };
+    },
+    {} as Record<string, string>,
+  )
+  .option("--page <pageId>", "run on this existing page")
+  .option("--keep-page", "keep the page after the run")
+  .option("--headed", "visible window when starting the profile")
+  .option("--screenshots <dir>", "directory to save screenshots", ".")
+  .action(
+    async (
+      wfRef: string,
+      profileRef: string,
+      opts: {
+        param: Record<string, string>;
+        page?: string;
+        keepPage?: boolean;
+        headed?: boolean;
+        screenshots: string;
+      },
+    ) => {
+      const result = await (
+        await client()
+      ).runWorkflow(wfRef, {
+        profile: profileRef,
+        params: opts.param,
+        pageId: opts.page,
+        keepPage: opts.keepPage,
+        headless: opts.headed ? false : undefined,
+      });
+      if (result.screenshots.length > 0) mkdirSync(opts.screenshots, { recursive: true });
+      for (const shot of result.screenshots) {
+        const path = join(opts.screenshots, `${wfRef}-${shot.stepId}.png`);
+        writeFileSync(path, Buffer.from(shot.data, "base64"));
+        shot.data = path;
+      }
+      out(result);
+      if (result.status !== "succeeded") process.exitCode = 1;
+    },
+  );
+
+workflow
+  .command("record-start <profile>")
+  .description("start recording actions on a profile")
+  .action(async (ref: string) => {
+    await (await client()).startRecording(ref);
+    console.log(`recording ${ref}`);
+  });
+
+workflow
+  .command("record-stop <profile>")
+  .description("stop recording and return the steps")
+  .option("--name <name>", "emit a full workflow skeleton with this name")
+  .option("-o, --output <file>", "write to a file instead of stdout")
+  .action(async (ref: string, opts: { name?: string; output?: string }) => {
+    const result = await (await client()).stopRecording(ref);
+    for (const w of result.warnings) console.error(`warning: ${w}`);
+    const payload = opts.name
+      ? { name: opts.name, params: {}, steps: result.steps }
+      : { steps: result.steps, warnings: result.warnings };
+    const json = JSON.stringify(payload, null, 2);
+    if (opts.output) writeFileSync(opts.output, json);
+    else console.log(json);
+  });
 
 try {
   await program.parseAsync();

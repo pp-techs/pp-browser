@@ -5,11 +5,13 @@ import {
   formatProxyUrl,
   parseProxyUrl,
   PpbError,
+  resolveParams,
   type ClickInput,
   type CreateProfileInput,
   type CreateProxyInput,
   type EvaluateInput,
   type GotoInput,
+  type Locator as WfLocator,
   type NewPageInput,
   type PageInfo,
   type PageRefInput,
@@ -18,6 +20,8 @@ import {
   type Profile,
   type Proxy,
   type ProxyCheck,
+  type RecordingResult,
+  type RunWorkflowInput,
   type RuntimeInfo,
   type ScreenshotInput,
   type ScreenshotResult,
@@ -28,15 +32,22 @@ import {
   type UpdateProfileInput,
   type UpdateProxyInput,
   type WaitForInput,
+  type Workflow,
+  type WorkflowDefinition,
+  type WorkflowRunResult,
+  type WorkflowSummary,
 } from "@ppb/shared";
 import * as engine from "./camoufox.ts";
 import { openDb } from "./db.ts";
 import { Forwarder } from "./forwarder.ts";
+import { describeTarget } from "./locator.ts";
 import { usageByProfileDir } from "./metrics.ts";
 import { ensureDirs, profileDir, type Paths } from "./paths.ts";
+import { Recorder } from "./recorder.ts";
+import { runSteps } from "./runner.ts";
 import { locate, normalizeUrl, Session } from "./session.ts";
 import type { Page } from "playwright-core";
-import { Store, type ProfileRow, type ProxyRow } from "./store.ts";
+import { Store, type ProfileRow, type ProxyRow, type WorkflowRow } from "./store.ts";
 
 export interface ServiceOptions {
   paths: Paths;
@@ -92,19 +103,20 @@ export class CoreService implements PpbApi {
     this.#assertProfileNameFree(input.name);
     const proxyId = input.proxyId ? this.#proxy(input.proxyId).id : null;
     const now = new Date().toISOString();
+    const { identity, fingerprint } = await engine.generateIdentity(input.os);
     const row: ProfileRow = {
       id: newId(),
       name: input.name,
       group: input.group || null,
       notes: input.notes || null,
       proxyId,
-      identity: await engine.generateIdentity(input.os),
+      identity,
       lastIp: null,
       createdAt: now,
       updatedAt: now,
       lastOpenedAt: null,
     };
-    this.#store.insertProfile(row);
+    this.#store.insertProfile(row, fingerprint);
     return this.getProfile(row.id);
   }
 
@@ -176,12 +188,21 @@ export class CoreService implements PpbApi {
     let forwarder: Forwarder | null = null;
     try {
       const row = this.#store.findProfile(profileId)!;
+      let { identity } = row;
+      let fingerprint = this.#store.profileFingerprint(profileId);
+      if (!fingerprint) {
+        // A profile from before the move to the official camoufox package: its old fingerprint cannot be
+        // replayed, so it gets a new one, once. Cookies and storage are untouched.
+        const fresh = await engine.generateIdentity(row.identity.os);
+        this.#store.updateProfile(profileId, fresh);
+        ({ identity, fingerprint } = fresh);
+      }
       const proxy = row.proxyId ? this.#store.findProxy(row.proxyId) : null;
       if (proxy) forwarder = await Forwarder.start(proxy.url);
 
       let geo: engine.Geo;
       try {
-        geo = await engine.resolveGeo(forwarder?.url ?? null, row.identity);
+        geo = await engine.resolveGeo(forwarder?.url ?? null, identity);
       } catch (error) {
         throw proxy
           ? new PpbError(
@@ -197,7 +218,8 @@ export class CoreService implements PpbApi {
       await engine.installEngine();
       const context = await engine.launch({
         userDataDir: profileDir(this.#paths, profileId),
-        identity: row.identity,
+        identity,
+        fingerprint,
         proxyUrl: forwarder?.url ?? null,
         geo,
         headless,
@@ -213,9 +235,9 @@ export class CoreService implements PpbApi {
 
       this.#store.updateProfile(profileId, {
         identity:
-          row.identity.locale?.country === geo.country
+          identity.locale?.country === geo.country
             ? undefined
-            : { ...row.identity, locale: { country: geo.country, value: geo.locale } },
+            : { ...identity, locale: { country: geo.country, value: geo.locale } },
         lastIp: geo.ip,
         lastOpenedAt: new Date().toISOString(),
       });
@@ -324,7 +346,11 @@ export class CoreService implements PpbApi {
     const session = this.#session(ref);
     const page = await session.newPage();
     if (input.url) await page.goto(normalizeUrl(input.url), { waitUntil: "domcontentloaded" });
-    return session.info(page);
+    const info = await session.info(page);
+    if (session.recorder && input.url) {
+      session.recorder.add(info.pageId, { do: "goto", url: normalizeUrl(input.url) });
+    }
+    return info;
   }
 
   async closePage(ref: string, pageId: string): Promise<void> {
@@ -334,6 +360,11 @@ export class CoreService implements PpbApi {
   async goto(ref: string, input: GotoInput): Promise<PageInfo> {
     return this.#onPage(ref, input.pageId, async (page) => {
       await page.goto(normalizeUrl(input.url), { waitUntil: "domcontentloaded" });
+      const session = this.#session(ref);
+      if (session.recorder) {
+        const info = await session.info(page);
+        session.recorder.add(info.pageId, { do: "goto", url: normalizeUrl(input.url) });
+      }
     });
   }
 
@@ -341,24 +372,55 @@ export class CoreService implements PpbApi {
     const session = this.#session(ref);
     const page = await session.page(input.pageId);
     const snapshot = await page.ariaSnapshot({ mode: "ai" });
+    session.rememberSnapshot(page, snapshot);
     const info = await session.info(page);
     return { pageId: info.pageId, url: info.url, title: info.title, snapshot };
   }
 
   async click(ref: string, input: ClickInput): Promise<PageInfo> {
-    return this.#onPage(ref, input.pageId, (page) => locate(page, input.target).click());
+    return this.#onPage(ref, input.pageId, async (page) => {
+      const session = this.#session(ref);
+      const recTarget = session.recorder
+        ? await this.#recordTarget(session, page, input.target, "click")
+        : null;
+      await locate(page, input.target).click();
+      if (session.recorder && recTarget) {
+        const info = await session.info(page);
+        session.recorder.add(info.pageId, { do: "click", target: recTarget });
+      }
+    });
   }
 
   async type(ref: string, input: TypeInput): Promise<PageInfo> {
     return this.#onPage(ref, input.pageId, async (page) => {
+      const session = this.#session(ref);
+      const recTarget = session.recorder
+        ? await this.#recordTarget(session, page, input.target, "type")
+        : null;
       const field = locate(page, input.target);
       await field.fill(input.text);
       if (input.submit) await field.press("Enter");
+      if (session.recorder && recTarget) {
+        const info = await session.info(page);
+        session.recorder.add(info.pageId, {
+          do: "type",
+          target: recTarget,
+          text: input.text,
+          ...(input.submit ? { submit: true } : {}),
+        });
+      }
     });
   }
 
   async press(ref: string, input: PressInput): Promise<PageInfo> {
-    return this.#onPage(ref, input.pageId, (page) => page.keyboard.press(input.key));
+    return this.#onPage(ref, input.pageId, async (page) => {
+      await page.keyboard.press(input.key);
+      const session = this.#session(ref);
+      if (session.recorder) {
+        const info = await session.info(page);
+        session.recorder.add(info.pageId, { do: "press", key: input.key });
+      }
+    });
   }
 
   async screenshot(ref: string, input: ScreenshotInput = {}): Promise<ScreenshotResult> {
@@ -376,21 +438,180 @@ export class CoreService implements PpbApi {
     const session = this.#session(ref);
     const page = await session.page(input.pageId);
     const result: unknown = await page.evaluate(input.expression);
+    if (session.recorder) session.recorder.note("evaluate is not recordable; step omitted");
     return { pageId: (await session.info(page)).pageId, result };
   }
 
   async waitFor(ref: string, input: WaitForInput): Promise<PageInfo> {
     return this.#onPage(ref, input.pageId, async (page) => {
+      const session = this.#session(ref);
+      const recTarget =
+        session.recorder && input.selector
+          ? await this.#recordTarget(session, page, input.selector, "wait_for")
+          : null;
       const timeout = input.timeoutMs;
       if (input.text)
         await page.getByText(input.text).first().waitFor({ state: "visible", timeout });
       else if (input.selector)
         await locate(page, input.selector).first().waitFor({ state: "visible", timeout });
       else await page.waitForTimeout(timeout ?? 1000);
+      if (session.recorder) {
+        const info = await session.info(page);
+        if (input.text) {
+          session.recorder.add(info.pageId, {
+            do: "wait_for",
+            text: input.text,
+            ...(timeout !== undefined ? { timeoutMs: timeout } : {}),
+          });
+        } else if (recTarget) {
+          session.recorder.add(info.pageId, {
+            do: "wait_for",
+            target: recTarget,
+            ...(timeout !== undefined ? { timeoutMs: timeout } : {}),
+          });
+        } else if (!input.selector) {
+          session.recorder.add(info.pageId, {
+            do: "wait_for",
+            timeoutMs: timeout ?? 1000,
+          });
+        }
+      }
     });
   }
 
+  // ── workflows ───────────────────────────────────────────────────────────
+
+  async listWorkflows(): Promise<WorkflowSummary[]> {
+    return this.#store.listWorkflows().map((row) => this.#workflowSummary(row));
+  }
+
+  async getWorkflow(ref: string): Promise<Workflow> {
+    return this.#workflowView(this.#workflow(ref));
+  }
+
+  async saveWorkflow(definition: WorkflowDefinition): Promise<Workflow> {
+    const json = JSON.stringify(definition);
+    const now = new Date().toISOString();
+    const existing = this.#store.findWorkflow(definition.name);
+    if (!existing) {
+      this.#store.insertWorkflow({ id: newId(), name: definition.name, createdAt: now }, json);
+    } else if (existing.definitionJson !== json) {
+      this.#store.addWorkflowVersion(existing.id, existing.version + 1, json, now);
+    }
+    return this.getWorkflow(definition.name);
+  }
+
+  async deleteWorkflow(ref: string): Promise<void> {
+    const row = this.#workflow(ref);
+    this.#store.deleteWorkflow(row.id);
+  }
+
+  async runWorkflow(ref: string, input: RunWorkflowInput): Promise<WorkflowRunResult> {
+    const row = this.#workflow(ref);
+    const params = resolveParams(row.definition.params, input.params ?? {});
+    const profile = this.#profile(input.profile);
+    const start = performance.now();
+
+    if (!this.#sessions.has(profile.id)) {
+      await this.startProfile(profile.id, { headless: input.headless ?? true });
+    }
+    const session = this.#session(profile.id);
+    const opened = !input.pageId;
+    const page = opened ? await session.newPage() : await session.page(input.pageId);
+
+    const outcome = await runSteps(page, row.definition, params);
+
+    let snapshot: string | undefined;
+    if (outcome.status !== "succeeded") {
+      snapshot = await page.ariaSnapshot({ mode: "ai" }).catch(() => undefined);
+      if (snapshot !== undefined) {
+        // A typed field shows its value in the snapshot; keep secret parameters out of what the caller sees.
+        for (const [name, param] of Object.entries(row.definition.params)) {
+          const value = param.type === "secret" ? String(params[name] ?? "") : "";
+          if (value) snapshot = snapshot.split(value).join("***");
+        }
+        session.rememberSnapshot(page, snapshot);
+      }
+    }
+
+    const info = await session.info(page);
+    if (opened && !input.keepPage && outcome.status !== "needs_agent") {
+      await page.close().catch(() => undefined);
+    }
+
+    return {
+      workflow: row.name,
+      version: row.version,
+      profile: profile.name,
+      pageId: info.pageId,
+      status: outcome.status,
+      ...(outcome.failedStep ? { failedStep: outcome.failedStep } : {}),
+      outputs: outcome.outputs,
+      screenshots: outcome.screenshots,
+      log: outcome.log,
+      ...(snapshot !== undefined ? { snapshot } : {}),
+      durationMs: Math.round(performance.now() - start),
+    };
+  }
+
+  async startRecording(ref: string): Promise<void> {
+    const session = this.#session(ref);
+    if (session.recorder) {
+      const row = this.#profile(ref);
+      throw new PpbError("CONFLICT", `Profile ${row.name} is already recording`);
+    }
+    session.recorder = new Recorder();
+  }
+
+  async stopRecording(ref: string): Promise<RecordingResult> {
+    const session = this.#session(ref);
+    if (!session.recorder) {
+      const row = this.#profile(ref);
+      throw new PpbError("CONFLICT", `Profile ${row.name} is not recording`);
+    }
+    const result = session.recorder.finish();
+    session.recorder = null;
+    return result;
+  }
+
   // ── helpers ─────────────────────────────────────────────────────────────
+
+  async #recordTarget(
+    session: Session,
+    page: Page,
+    target: string,
+    action: string,
+  ): Promise<WfLocator | null> {
+    const result = await describeTarget(page, session.lastSnapshot(page), target);
+    if ("warning" in result) {
+      session.recorder?.skip(action, target, result.warning);
+      return null;
+    }
+    return result;
+  }
+
+  #workflow(ref: string): WorkflowRow {
+    const row = this.#store.findWorkflow(ref);
+    if (!row) throw new PpbError("NOT_FOUND", `No workflow ${ref}`);
+    return row;
+  }
+
+  #workflowSummary(row: WorkflowRow): WorkflowSummary {
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.definition.description ?? null,
+      version: row.version,
+      params: row.definition.params,
+      stepCount: row.definition.steps.length,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  #workflowView(row: WorkflowRow): Workflow {
+    return { ...this.#workflowSummary(row), definition: row.definition };
+  }
 
   async #onPage(
     ref: string,

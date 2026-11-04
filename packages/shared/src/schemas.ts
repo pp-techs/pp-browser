@@ -3,7 +3,7 @@ import * as z from "zod";
 export const osSchema = z.enum(["windows", "macos", "linux"]);
 export type ProfileOs = z.infer<typeof osSchema>;
 
-const nameSchema = z
+export const nameSchema = z
   .string()
   .trim()
   .min(1)
