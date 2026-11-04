@@ -17,3 +17,14 @@ export const proxiesQuery = queryOptions({
   queryKey: ["proxies"],
   queryFn: () => getApi().listProxies(),
 });
+
+export const workflowsQuery = queryOptions({
+  queryKey: ["workflows"],
+  queryFn: () => getApi().listWorkflows(),
+});
+
+export const workflowQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["workflows", id],
+    queryFn: () => getApi().getWorkflow(id),
+  });

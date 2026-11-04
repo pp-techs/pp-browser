@@ -8,10 +8,12 @@ import {
   pageRefSchema,
   PpbError,
   pressSchema,
+  runWorkflowSchema,
   screenshotSchema,
   startProfileSchema,
   typeSchema,
   waitForSchema,
+  workflowDefinitionSchema,
   type PageInfo,
   type PpbApi,
   type Profile,
@@ -205,6 +207,84 @@ export function createPpMcpServer(api: PpbApi, version: string): McpServer {
     "Evaluate a JavaScript expression in the page and return its JSON result.",
     evaluateSchema.extend(profileArg),
     async ({ profile, ...input }) => text((await api.evaluate(profile, input)).result ?? null),
+  );
+
+  // ── workflows ───────────────────────────────────────────────────────────
+
+  const workflowArg = {
+    workflow: z.string().min(1).describe("Workflow id or name"),
+  };
+
+  tool("list_workflows", "List saved workflows with their parameters.", z.object({}), async () =>
+    text(await api.listWorkflows()),
+  );
+
+  tool(
+    "get_workflow",
+    "Show a workflow definition.",
+    z.object(workflowArg),
+    async ({ workflow }) => {
+      const wf = await api.getWorkflow(workflow);
+      return text({ version: wf.version, definition: wf.definition });
+    },
+  );
+
+  tool(
+    "save_workflow",
+    'Save (create or update) a reusable browser workflow; saving an existing name creates a new version. definition = { name, description?, params?: { <name>: { type: "string"|"number"|"boolean"|"secret", required?, default?, description? } }, steps: Step[] }. Step = { id, do, optional?, onFail?: "needs_agent"|"abort"|"continue", timeoutMs? } plus per do: goto {url}; click {target}; type {target, text, submit?, mode?: "fill"|"keystrokes"}; press {key}; wait_for {text? | target?} (neither = sleep timeoutMs); screenshot {fullPage?}; extract {target, attr?}; if {cond, then, else?}; switch {cases: [{cond, steps}], default?}. target = {role, name?, exact?, nth?} | {text, exact?, nth?} | {selector, nth?}; never snapshot refs. cond = {exists: target} | {notExists: target} | {textVisible} | {urlMatches} | {paramSet} | {paramEquals: {name, value}} | {and: [..]} | {or: [..]} | {not: cond}. Strings may contain {{param}} and {{steps.<id>.value}} (set by extract). if checks once; switch waits up to timeoutMs (default 10000) for the first matching case, then runs default. optional steps are skipped when they fail (default timeout 2000ms).',
+    z.object({
+      definition: z
+        .record(z.string(), z.unknown())
+        .describe("Workflow definition object; see tool description for the format"),
+    }),
+    async ({ definition }) => {
+      const parsed = workflowDefinitionSchema.safeParse(definition);
+      if (!parsed.success) throw new PpbError("INVALID_INPUT", z.prettifyError(parsed.error));
+      const wf = await api.saveWorkflow(parsed.data);
+      return text({ name: wf.name, version: wf.version });
+    },
+  );
+
+  tool("delete_workflow", "Delete a workflow.", z.object(workflowArg), async ({ workflow }) => {
+    await api.deleteWorkflow(workflow);
+    return text(`deleted ${workflow}`);
+  });
+
+  tool(
+    "run_workflow",
+    "Run a saved workflow on a profile (starts it headless if needed). On status needs_agent the page stays open: read failedStep and the snapshot, fix the step with save_workflow, then run again.",
+    runWorkflowSchema.extend(workflowArg),
+    async ({ workflow, ...input }) => {
+      const result = await api.runWorkflow(workflow, input);
+      const { screenshots, snapshot, ...rest } = result;
+      const content: ToolResult["content"] = [
+        { type: "text", text: JSON.stringify(rest, null, 2) },
+      ];
+      if (snapshot !== undefined) {
+        content.push({ type: "text", text: `page ${result.pageId} snapshot:\n${snapshot}` });
+      }
+      for (const shot of screenshots) {
+        content.push({ type: "image", data: shot.data, mimeType: "image/png" });
+      }
+      return { content };
+    },
+  );
+
+  tool(
+    "start_recording",
+    "Record this profile's subsequent navigate/click/type/press/wait_for calls as workflow steps. Call snapshot before acting so refs can be turned into stable locators.",
+    z.object(profileArg),
+    async ({ profile }) => {
+      await api.startRecording(profile);
+      return text(`recording ${profile}`);
+    },
+  );
+
+  tool(
+    "stop_recording",
+    "Stop recording and return the recorded steps and warnings. Replace literal values with {{param}} placeholders, add params, then save_workflow.",
+    z.object(profileArg),
+    async ({ profile }) => text(await api.stopRecording(profile)),
   );
 
   return server;

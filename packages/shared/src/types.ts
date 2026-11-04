@@ -15,6 +15,12 @@ import type {
   UpdateProxyInput,
   WaitForInput,
 } from "./schemas.ts";
+import type {
+  RunWorkflowInput,
+  WorkflowDefinition,
+  WorkflowParam,
+  WorkflowStep,
+} from "./workflow.ts";
 
 export type ProfileStatus = "stopped" | "starting" | "running" | "stopping" | "error";
 
@@ -109,6 +115,48 @@ export interface SystemStatus {
   hostPlatform: string;
 }
 
+export type WorkflowSummary = {
+  id: string;
+  name: string;
+  description: string | null;
+  version: number;
+  params: Record<string, WorkflowParam>;
+  stepCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+export type Workflow = WorkflowSummary & { definition: WorkflowDefinition };
+
+export type StepStatus = "ok" | "skipped" | "continued" | "failed";
+/** Type alias (not an interface) so it satisfies the `Record<string, unknown>` row constraint of UI tables. */
+export type StepLog = {
+  path: string;
+  id: string;
+  do: string;
+  status: StepStatus;
+  branch?: string;
+  error?: string;
+  ms: number;
+};
+export type RunStatus = "succeeded" | "failed" | "needs_agent";
+export interface WorkflowRunResult {
+  workflow: string;
+  version: number;
+  profile: string;
+  pageId: string;
+  status: RunStatus;
+  failedStep?: { path: string; id: string; error: string };
+  outputs: Record<string, string>;
+  screenshots: { stepId: string; data: string }[];
+  log: StepLog[];
+  snapshot?: string;
+  durationMs: number;
+}
+export interface RecordingResult {
+  steps: WorkflowStep[];
+  warnings: string[];
+}
+
 /** Profile and proxy references accept either the id or the unique name. */
 export interface PpbApi {
   status(): Promise<SystemStatus>;
@@ -141,4 +189,12 @@ export interface PpbApi {
   screenshot(ref: string, input?: ScreenshotInput): Promise<ScreenshotResult>;
   evaluate(ref: string, input: EvaluateInput): Promise<{ pageId: string; result: unknown }>;
   waitFor(ref: string, input: WaitForInput): Promise<PageInfo>;
+
+  listWorkflows(): Promise<WorkflowSummary[]>;
+  getWorkflow(ref: string): Promise<Workflow>;
+  saveWorkflow(definition: WorkflowDefinition): Promise<Workflow>;
+  deleteWorkflow(ref: string): Promise<void>;
+  runWorkflow(ref: string, input: RunWorkflowInput): Promise<WorkflowRunResult>;
+  startRecording(ref: string): Promise<void>;
+  stopRecording(ref: string): Promise<RecordingResult>;
 }

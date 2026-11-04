@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@ppb/shared": "workspace:*",
-    "camoufox-js": "catalog:",
-    "fingerprint-generator": "catalog:",
+    "camoufox": "catalog:",
+    "fpgen-js": "catalog:",
     "playwright-core": "catalog:",
     "proxy-chain": "catalog:"
   },

@@ -59,3 +59,14 @@ export function LogoIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function WorkflowsIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...stroke} {...props}>
+      <rect x="3" y="3" width="6" height="6" rx="1.5" />
+      <rect x="15" y="15" width="6" height="6" rx="1.5" />
+      <path d="M9 6h3a3 3 0 0 1 3 3v6" />
+      <path d="m12.5 12.5 2.5 2.5 2.5-2.5" />
+    </svg>
+  );
+}

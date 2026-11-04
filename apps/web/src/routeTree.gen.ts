@@ -14,12 +14,16 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AppConnectRouteRouteImport } from './routes/_app/connect/route'
 import { Route as AppProfilesRouteRouteImport } from './routes/_app/profiles/route'
 import { Route as AppProxiesRouteRouteImport } from './routes/_app/proxies/route'
+import { Route as AppWorkflowsRouteRouteImport } from './routes/_app/workflows/route'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
 import { Route as AppConnectIndexRouteImport } from './routes/_app/connect/index'
 import { Route as AppConnectToolsRouteImport } from './routes/_app/connect/tools'
 import { Route as AppProfilesNewRouteImport } from './routes/_app/profiles/new'
 import { Route as AppProxiesImportRouteImport } from './routes/_app/proxies/import'
+import { Route as AppWorkflowsImportRouteImport } from './routes/_app/workflows/import'
 import { Route as AppProfilesProfileIdEditRouteImport } from './routes/_app/profiles/$profileId/edit'
+import { Route as AppWorkflowsWorkflowIdRunRouteImport } from './routes/_app/workflows/$workflowId/run'
+import { Route as AppWorkflowsWorkflowIdViewRouteImport } from './routes/_app/workflows/$workflowId/view'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -43,6 +47,11 @@ const AppProfilesRouteRoute = AppProfilesRouteRouteImport.update({
 const AppProxiesRouteRoute = AppProxiesRouteRouteImport.update({
   id: '/proxies',
   path: '/proxies',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppWorkflowsRouteRoute = AppWorkflowsRouteRouteImport.update({
+  id: '/workflows',
+  path: '/workflows',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const LoginIndexRoute = LoginIndexRouteImport.update({
@@ -70,11 +79,28 @@ const AppProxiesImportRoute = AppProxiesImportRouteImport.update({
   path: '/import',
   getParentRoute: () => AppProxiesRouteRoute,
 } as any)
+const AppWorkflowsImportRoute = AppWorkflowsImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => AppWorkflowsRouteRoute,
+} as any)
 const AppProfilesProfileIdEditRoute =
   AppProfilesProfileIdEditRouteImport.update({
     id: '/$profileId/edit',
     path: '/$profileId/edit',
     getParentRoute: () => AppProfilesRouteRoute,
+  } as any)
+const AppWorkflowsWorkflowIdRunRoute =
+  AppWorkflowsWorkflowIdRunRouteImport.update({
+    id: '/$workflowId/run',
+    path: '/$workflowId/run',
+    getParentRoute: () => AppWorkflowsRouteRoute,
+  } as any)
+const AppWorkflowsWorkflowIdViewRoute =
+  AppWorkflowsWorkflowIdViewRouteImport.update({
+    id: '/$workflowId/view',
+    path: '/$workflowId/view',
+    getParentRoute: () => AppWorkflowsRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -82,23 +108,31 @@ export interface FileRoutesByFullPath {
   '/connect': typeof AppConnectRouteRouteWithChildren
   '/profiles': typeof AppProfilesRouteRouteWithChildren
   '/proxies': typeof AppProxiesRouteRouteWithChildren
+  '/workflows': typeof AppWorkflowsRouteRouteWithChildren
   '/login/': typeof LoginIndexRoute
   '/connect/tools': typeof AppConnectToolsRoute
   '/profiles/new': typeof AppProfilesNewRoute
   '/proxies/import': typeof AppProxiesImportRoute
+  '/workflows/import': typeof AppWorkflowsImportRoute
   '/connect/': typeof AppConnectIndexRoute
   '/profiles/$profileId/edit': typeof AppProfilesProfileIdEditRoute
+  '/workflows/$workflowId/run': typeof AppWorkflowsWorkflowIdRunRoute
+  '/workflows/$workflowId/view': typeof AppWorkflowsWorkflowIdViewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/profiles': typeof AppProfilesRouteRouteWithChildren
   '/proxies': typeof AppProxiesRouteRouteWithChildren
+  '/workflows': typeof AppWorkflowsRouteRouteWithChildren
   '/login': typeof LoginIndexRoute
   '/connect/tools': typeof AppConnectToolsRoute
   '/profiles/new': typeof AppProfilesNewRoute
   '/proxies/import': typeof AppProxiesImportRoute
+  '/workflows/import': typeof AppWorkflowsImportRoute
   '/connect': typeof AppConnectIndexRoute
   '/profiles/$profileId/edit': typeof AppProfilesProfileIdEditRoute
+  '/workflows/$workflowId/run': typeof AppWorkflowsWorkflowIdRunRoute
+  '/workflows/$workflowId/view': typeof AppWorkflowsWorkflowIdViewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,12 +141,16 @@ export interface FileRoutesById {
   '/_app/connect': typeof AppConnectRouteRouteWithChildren
   '/_app/profiles': typeof AppProfilesRouteRouteWithChildren
   '/_app/proxies': typeof AppProxiesRouteRouteWithChildren
+  '/_app/workflows': typeof AppWorkflowsRouteRouteWithChildren
   '/login/': typeof LoginIndexRoute
   '/_app/connect/tools': typeof AppConnectToolsRoute
   '/_app/profiles/new': typeof AppProfilesNewRoute
   '/_app/proxies/import': typeof AppProxiesImportRoute
+  '/_app/workflows/import': typeof AppWorkflowsImportRoute
   '/_app/connect/': typeof AppConnectIndexRoute
   '/_app/profiles/$profileId/edit': typeof AppProfilesProfileIdEditRoute
+  '/_app/workflows/$workflowId/run': typeof AppWorkflowsWorkflowIdRunRoute
+  '/_app/workflows/$workflowId/view': typeof AppWorkflowsWorkflowIdViewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,23 +159,31 @@ export interface FileRouteTypes {
     | '/connect'
     | '/profiles'
     | '/proxies'
+    | '/workflows'
     | '/login/'
     | '/connect/tools'
     | '/profiles/new'
     | '/proxies/import'
+    | '/workflows/import'
     | '/connect/'
     | '/profiles/$profileId/edit'
+    | '/workflows/$workflowId/run'
+    | '/workflows/$workflowId/view'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/profiles'
     | '/proxies'
+    | '/workflows'
     | '/login'
     | '/connect/tools'
     | '/profiles/new'
     | '/proxies/import'
+    | '/workflows/import'
     | '/connect'
     | '/profiles/$profileId/edit'
+    | '/workflows/$workflowId/run'
+    | '/workflows/$workflowId/view'
   id:
     | '__root__'
     | '/'
@@ -145,12 +191,16 @@ export interface FileRouteTypes {
     | '/_app/connect'
     | '/_app/profiles'
     | '/_app/proxies'
+    | '/_app/workflows'
     | '/login/'
     | '/_app/connect/tools'
     | '/_app/profiles/new'
     | '/_app/proxies/import'
+    | '/_app/workflows/import'
     | '/_app/connect/'
     | '/_app/profiles/$profileId/edit'
+    | '/_app/workflows/$workflowId/run'
+    | '/_app/workflows/$workflowId/view'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -196,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProxiesRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/workflows': {
+      id: '/_app/workflows'
+      path: '/workflows'
+      fullPath: '/workflows'
+      preLoaderRoute: typeof AppWorkflowsRouteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/login/': {
       id: '/login/'
       path: '/login'
@@ -231,12 +288,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProxiesImportRouteImport
       parentRoute: typeof AppProxiesRouteRoute
     }
+    '/_app/workflows/import': {
+      id: '/_app/workflows/import'
+      path: '/import'
+      fullPath: '/workflows/import'
+      preLoaderRoute: typeof AppWorkflowsImportRouteImport
+      parentRoute: typeof AppWorkflowsRouteRoute
+    }
     '/_app/profiles/$profileId/edit': {
       id: '/_app/profiles/$profileId/edit'
       path: '/$profileId/edit'
       fullPath: '/profiles/$profileId/edit'
       preLoaderRoute: typeof AppProfilesProfileIdEditRouteImport
       parentRoute: typeof AppProfilesRouteRoute
+    }
+    '/_app/workflows/$workflowId/run': {
+      id: '/_app/workflows/$workflowId/run'
+      path: '/$workflowId/run'
+      fullPath: '/workflows/$workflowId/run'
+      preLoaderRoute: typeof AppWorkflowsWorkflowIdRunRouteImport
+      parentRoute: typeof AppWorkflowsRouteRoute
+    }
+    '/_app/workflows/$workflowId/view': {
+      id: '/_app/workflows/$workflowId/view'
+      path: '/$workflowId/view'
+      fullPath: '/workflows/$workflowId/view'
+      preLoaderRoute: typeof AppWorkflowsWorkflowIdViewRouteImport
+      parentRoute: typeof AppWorkflowsRouteRoute
     }
   }
 }
@@ -280,16 +358,33 @@ const AppProxiesRouteRouteWithChildren = AppProxiesRouteRoute._addFileChildren(
   AppProxiesRouteRouteChildren,
 )
 
+interface AppWorkflowsRouteRouteChildren {
+  AppWorkflowsImportRoute: typeof AppWorkflowsImportRoute
+  AppWorkflowsWorkflowIdRunRoute: typeof AppWorkflowsWorkflowIdRunRoute
+  AppWorkflowsWorkflowIdViewRoute: typeof AppWorkflowsWorkflowIdViewRoute
+}
+
+const AppWorkflowsRouteRouteChildren: AppWorkflowsRouteRouteChildren = {
+  AppWorkflowsImportRoute: AppWorkflowsImportRoute,
+  AppWorkflowsWorkflowIdRunRoute: AppWorkflowsWorkflowIdRunRoute,
+  AppWorkflowsWorkflowIdViewRoute: AppWorkflowsWorkflowIdViewRoute,
+}
+
+const AppWorkflowsRouteRouteWithChildren =
+  AppWorkflowsRouteRoute._addFileChildren(AppWorkflowsRouteRouteChildren)
+
 interface AppRouteRouteChildren {
   AppConnectRouteRoute: typeof AppConnectRouteRouteWithChildren
   AppProfilesRouteRoute: typeof AppProfilesRouteRouteWithChildren
   AppProxiesRouteRoute: typeof AppProxiesRouteRouteWithChildren
+  AppWorkflowsRouteRoute: typeof AppWorkflowsRouteRouteWithChildren
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppConnectRouteRoute: AppConnectRouteRouteWithChildren,
   AppProfilesRouteRoute: AppProfilesRouteRouteWithChildren,
   AppProxiesRouteRoute: AppProxiesRouteRouteWithChildren,
+  AppWorkflowsRouteRoute: AppWorkflowsRouteRouteWithChildren,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

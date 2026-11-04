@@ -7,11 +7,13 @@ import {
   ProfilesIcon,
   ProxiesIcon,
   SettingsIcon,
+  WorkflowsIcon,
 } from "../../../components/icons.tsx";
 
 const ITEMS = [
   { label: "Profiles", href: "/profiles", icon: ProfilesIcon },
   { label: "Proxies", href: "/proxies", icon: ProxiesIcon },
+  { label: "Workflows", href: "/workflows", icon: WorkflowsIcon },
   { label: "MCP / API", href: "/connect", icon: ConnectIcon },
 ] as const;
 

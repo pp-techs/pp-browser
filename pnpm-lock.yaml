@@ -212,18 +212,18 @@ catalogs:
     '@vitejs/plugin-react':
       specifier: ^6.2.1
       version: 6.2.1
-    camoufox-js:
-      specifier: ^0.13.0
-      version: 0.13.0
+    camoufox:
+      specifier: ^0.5.9
+      version: 0.5.9
     commander:
       specifier: ^15.0.0
       version: 15.0.0
     fastify:
       specifier: ^5.12.8
       version: 5.12.8
-    fingerprint-generator:
-      specifier: ^2.1.89
-      version: 2.1.89
+    fpgen-js:
+      specifier: 1.3.0
+      version: 1.3.0
     playwright-core:
       specifier: ~1.62.1
       version: 1.62.1
@@ -280,9 +280,9 @@ importers:
       '@modelcontextprotocol/server':
         specifier: 'catalog:'
         version: 2.4.0
-      camoufox-js:
+      camoufox:
         specifier: 'catalog:'
-        version: 0.13.0(playwright-core@1.62.1)
+        version: 0.5.9(playwright-core@1.62.1)
       commander:
         specifier: 'catalog:'
         version: 15.0.0
@@ -393,12 +393,12 @@ importers:
       '@ppb/shared':
         specifier: workspace:*
         version: link:../shared
-      camoufox-js:
+      camoufox:
         specifier: 'catalog:'
-        version: 0.13.0(playwright-core@1.62.1)
-      fingerprint-generator:
+        version: 0.5.9(playwright-core@1.62.1)
+      fpgen-js:
         specifier: 'catalog:'
-        version: 2.1.89
+        version: 1.3.0
       playwright-core:
         specifier: 'catalog:'
         version: 1.62.1
@@ -1189,10 +1189,6 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@sindresorhus/is@4.6.0':
-    resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
-    engines: {node: '>=10'}
-
   '@stylexjs/babel-plugin@0.19.1':
     resolution: {integrity: sha512-Ig3crX6MuGWDEAx+f89aLxTQUWVeEc2Aco2moIdcObyvo7hZJgU26rxJN3k7geFjhi+5dfna6TNR8iTRK0PQGA==}
 
@@ -1812,10 +1808,6 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  better-sqlite3@13.0.3:
-    resolution: {integrity: sha512-RbOBxmLBG8uvFUc15X9+9SFemKcQ0WBuISBVkpuiaUB2qblC8UWlHEjdWVoZ8AdhSwmoEgsiXKfopX0CQxaACQ==}
-    engines: {node: '>=22'}
-
   brace-expansion@5.0.12:
     resolution: {integrity: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==}
     engines: {node: 20 || >=22}
@@ -1832,16 +1824,12 @@ packages:
     resolution: {integrity: sha512-LMDU/U2yA4IPIY8KT0NsNPWEYZvAMkbgyspxJ6btJaYV+WMDOHAZCmB0lsTObiHaRS1V/ztKAl7+TSkTqXyeoA==}
     engines: {node: '>=20.19.0'}
 
-  callsites@3.1.0:
-    resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
-    engines: {node: '>=6'}
-
-  camoufox-js@0.13.0:
-    resolution: {integrity: sha512-XVT9ErgpLaDyUKA/R/mGsDhiVtcE14TaJHELmKNZxGCCwkXBjFdyx6JG3D2KX+MwdGnfKGWE96otSO3FfVh44w==}
-    engines: {node: '>= 22'}
+  camoufox@0.5.9:
+    resolution: {integrity: sha512-DxtuJhEb2ZI9Fv42irJhypMuf51X0BMVM5hM/+hBBj34E/YRL8AWyU7cpgTmlLfsyHZ2FFNTj01O9cGiACIyvQ==}
+    engines: {node: '>= 22.15'}
     hasBin: true
     peerDependencies:
-      playwright-core: <1.63.0
+      playwright-core: <1.63
 
   caniuse-lite@1.0.30001820:
     resolution: {integrity: sha512-gfWD6MxqVCqAOwmODfZf7DchWvlrA+SRdNX7ceLfg3xRqe5ssjjpF7EgslC/0tiLiNTajdaNN/q8c/5u/7Gz8w==}
@@ -1933,10 +1921,6 @@ packages:
   dom-accessibility-api@0.5.16:
     resolution: {integrity: sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg==}
 
-  dot-prop@6.0.1:
-    resolution: {integrity: sha512-tE7ztYzXHIeyvc7N+hR3oi7FIbf/NIjVP9hmAt3yMXzrQ072/fpjGLx2GxNxGxUl5V73MEqYzioOMoVhGMJ5cA==}
-    engines: {node: '>=10'}
-
   electron-to-chromium@1.5.472:
     resolution: {integrity: sha512-s4+nfT29b0FKpVKoaIxl2pWsoNcn7A/nMPSrxayw4T3BsmPeV2lF9Y06BsAQeMGhCTQ4nYJ5XST7jkqe4ZEqFw==}
 
@@ -2025,10 +2009,6 @@ packages:
     resolution: {integrity: sha512-1yD6RmLI1XBfxugvORwlck6f75tYL+iR0jqwsOrOxMZyGYqUuDhJ0l4AXdO1iX/FTs9cBAMEk1gWSEx1kSbylg==}
     engines: {node: '>=6'}
 
-  fingerprint-generator@2.1.89:
-    resolution: {integrity: sha512-rDczTTrnAKlqkFNt9mFkO6fNCqYX+Xv1QKJsuPZ5L509mtT7be9a6IsI5RPsk3Af+wg4wrhAdeT8OPaL6tJBXw==}
-    engines: {node: '>=16.0.0'}
-
   flatted@3.4.4:
     resolution: {integrity: sha512-5+ybhBZANEJxaH3X5evAFatUxLfEHSr7n6kYJ+1Qd0mUqr4eu9gIf6GDbWHf8RJijHrjjO8G+la14SlL2SeS1Q==}
 
@@ -2040,13 +2020,14 @@ packages:
     resolution: {integrity: sha512-GF+ohfrTVlvsNhxfRkON49QKG5j+5oqGb8qpGwE6mYlhIBaXDsss/JzfIxpSwVXgWtw8z8kabf/pNo1jXor5NA==}
     engines: {node: '>=0.4.0'}
 
+  fpgen-js@1.3.0:
+    resolution: {integrity: sha512-cdtYmaO+jxJiakTAuOnPKxY+tIFSINKNwB5SiaK6hbqkX9aLJeIyvyu+37pwT9Qac4QMQoedjIfDFsfdpfVhFQ==}
+    engines: {node: '>=22.15'}
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
-
-  generative-bayesian-network@2.1.89:
-    resolution: {integrity: sha512-oP5D5PsWpbM30dyAGPsyyZ4jogQA2aopy8TStSyCAtLRz85msdbh0l5tJ70pgeEXnQkaPWMhhvgxd7/qoss0FA==}
 
   gensync@1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
@@ -2058,10 +2039,6 @@ packages:
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
-
-  header-generator@2.1.89:
-    resolution: {integrity: sha512-FQL09ESlBWbHpG1lC0l3Au0uXHkje7d2z65o3lhbK1nR4bqIayAa0UT+i32hsXFZbE4vu8J4DMqPDm/MGCrpvg==}
-    engines: {node: '>=16.0.0'}
 
   hono@4.13.16:
     resolution: {integrity: sha512-AOLOEhvrV+iH92xXCnFr/5+3KjPKcI3xP63XJtX5spAnkznPdHijlIsUTpi7/9EhWqrTCekw5c5zh1K+YsVw7A==}
@@ -2161,10 +2138,6 @@ packages:
 
   is-fullwidth-code-point@3.0.0:
     resolution: {integrity: sha512-zymm5+u+sCsSWyD9qNaejV3DFvhCKclKdizYaJUuHA83RLjb7nSuGnddCHGv0hk+KY7BMAlsWeK4Ueg6EV6XQg==}
-    engines: {node: '>=8'}
-
-  is-obj@2.0.0:
-    resolution: {integrity: sha512-drqDG3cbczxxEJRoOXcOjtdp1J/lyp1mNn0xaznRs8+muBhgQcrnbspox5X5fOw0HnMnbfDzvnEMEtqDEJEo8w==}
     engines: {node: '>=8'}
 
   is-plain-object@2.0.4:
@@ -2316,10 +2289,6 @@ packages:
     resolution: {integrity: sha512-7AO748wWnIhNqAuaty2ZWHkQHRSNfPVIsPIfwEOWO22AmaoVrWavlOcMR5nzTLNYvp36X220/maaRsrec1G65A==}
     engines: {node: '>=6'}
 
-  lodash.isequal@4.5.0:
-    resolution: {integrity: sha512-pDo3lu8Jhfjqls6GkMgpahsF9kCyayhgykjyLMNFTKWrpVdAQtYyB4muAMWozBB4ig/dtWAmsMxLEI8wuz+DYQ==}
-    deprecated: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
-
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
@@ -2390,10 +2359,6 @@ packages:
   neo-async@2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
 
-  node-addon-api@8.9.2:
-    resolution: {integrity: sha512-VijLXbi3UACN69I0JVXJsX4tjACjNoQDgv2gTF6sx2wWEi8tkSg2eX8p5gSIFi8z2+DL3oHmY6OyKce38SDolg==}
-    engines: {node: ^18 || ^20 || >= 21}
-
   node-diff3@3.2.1:
     resolution: {integrity: sha512-eKZcJ8RtMQ3cIaA15EgmtwG927fYnRlhtdA4Q9HAcCpAZPQhhU2XptnTH9GeAkMiX2bAXxlJSAFa9shFbztPgw==}
     engines: {bun: '>=1.3.10'}
@@ -2409,10 +2374,6 @@ packages:
   on-exit-leak-free@2.1.2:
     resolution: {integrity: sha512-0eJJY6hXLGf1udHwfNftBqH+g73EU4B504nZeKpz1sYRKafAghwxEJunB2O7rDZkL4PGfsMVnTXZ2EjibbqcsA==}
     engines: {node: '>=14.0.0'}
-
-  ow@0.28.2:
-    resolution: {integrity: sha512-dD4UpyBh/9m4X2NVjA+73/ZPBRF+uF4zIMFvvQsabMiEK8x41L3rQ8EENOi35kyyoaJwNxEeJcP6Fj1H4U409Q==}
-    engines: {node: '>=12'}
 
   oxfmt@0.74.0:
     resolution: {integrity: sha512-G4OP7FgwGYZR5ttRpCOOfJdyRsSyvtn34vSXnjDq6Oqed5Dufg5mB44mank+51nAdHOKuTJ0lj0mksY7L+N61A==}
@@ -2541,6 +2502,10 @@ packages:
   proxy-chain@3.0.1:
     resolution: {integrity: sha512-ZISgL5pwUBXcijycj9ofC8wbJ9GmSEka71kn4dzjphDxfZcecQ6uvU2NWuyQcGdEf0XfscXWDs3KKgjxeQXTZw==}
     engines: {node: '>=20.11'}
+
+  python-random@1.0.0:
+    resolution: {integrity: sha512-Ly4XXYXpdKmdFH90XprDx+rd2fjo60WkVXQs0J0Lkd82x5kud5ePAwNSHjThFpIpNE+tdFj0eHl1Q+NsZ7Hirg==}
+    engines: {node: '>=20'}
 
   quick-format-unescaped@4.0.4:
     resolution: {integrity: sha512-tYC1Q1hgyRuHgloV/YXs2w15unPVh8qfu/qCTfhTYamaw7fyhumKa2yGpdSo87vY32rIclj+4fWYQXUMs9EHvg==}
@@ -2811,10 +2776,6 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
-
-  vali-date@1.0.0:
-    resolution: {integrity: sha512-sgECfZthyaCKW10N0fm27cg8HYTFK5qMWgypqkXMQ4Wbl/zZKx7xZICgcoxIIE+WFAP/MBL2EFwC/YvLxw3Zeg==}
-    engines: {node: '>=0.10.0'}
 
   vite-plus@1.4.0:
     resolution: {integrity: sha512-bLyUKNFl0XjbHe20FpDM6OuknOb2E4ueoWKCW4n+wMO2+lQtA9tmAjW+Xs0Xe9rg2+tCgY3W13GOgDh2wjwjAQ==}
@@ -3597,8 +3558,6 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@sindresorhus/is@4.6.0': {}
-
   '@stylexjs/babel-plugin@0.19.1':
     dependencies:
       '@babel/core': 7.29.7
@@ -4126,10 +4085,6 @@ snapshots:
 
   baseline-browser-mapping@2.11.34: {}
 
-  better-sqlite3@13.0.3:
-    dependencies:
-      node-addon-api: 8.9.2
-
   brace-expansion@5.0.12:
     dependencies:
       balanced-match: 4.0.4
@@ -4146,23 +4101,21 @@ snapshots:
 
   cac@7.1.0: {}
 
-  callsites@3.1.0: {}
-
-  camoufox-js@0.13.0(playwright-core@1.62.1):
+  camoufox@0.5.9(playwright-core@1.62.1):
     dependencies:
       adm-zip: 0.6.1
-      better-sqlite3: 13.0.3
       cli-progress: 3.12.0
       commander: 14.0.3
-      fingerprint-generator: 2.1.89
-      glob: 13.0.6
+      fpgen-js: 1.3.0
       impit: 0.14.8
       language-tags: 2.1.0
       maxmind: 5.0.8
       playwright-core: 1.62.1
       pretty-bytes: 7.2.0
+      python-random: 1.0.0
       ua-parser-js: 2.0.10
       xml2js: 0.6.2
+      yaml: 2.9.1
 
   caniuse-lite@1.0.30001820: {}
 
@@ -4219,10 +4172,6 @@ snapshots:
   diff@9.0.0: {}
 
   dom-accessibility-api@0.5.16: {}
-
-  dot-prop@6.0.1:
-    dependencies:
-      is-obj: 2.0.0
 
   electron-to-chromium@1.5.472: {}
 
@@ -4319,12 +4268,6 @@ snapshots:
     dependencies:
       locate-path: 3.0.0
 
-  fingerprint-generator@2.1.89:
-    dependencies:
-      generative-bayesian-network: 2.1.89
-      header-generator: 2.1.89
-      tslib: 2.9.1
-
   flatted@3.4.4: {}
 
   flow-estree@0.338.0: {}
@@ -4333,13 +4276,10 @@ snapshots:
     dependencies:
       flow-estree: 0.338.0
 
+  fpgen-js@1.3.0: {}
+
   fsevents@2.3.3:
     optional: true
-
-  generative-bayesian-network@2.1.89:
-    dependencies:
-      adm-zip: 0.6.1
-      tslib: 2.9.1
 
   gensync@1.0.0-beta.2: {}
 
@@ -4350,13 +4290,6 @@ snapshots:
       path-scurry: 2.0.2
 
   graceful-fs@4.2.11: {}
-
-  header-generator@2.1.89:
-    dependencies:
-      browserslist: 4.29.5
-      generative-bayesian-network: 2.1.89
-      ow: 0.28.2
-      tslib: 2.9.1
 
   hono@4.13.16: {}
 
@@ -4427,8 +4360,6 @@ snapshots:
   ipaddr.js@2.5.0: {}
 
   is-fullwidth-code-point@3.0.0: {}
-
-  is-obj@2.0.0: {}
 
   is-plain-object@2.0.4:
     dependencies:
@@ -4555,8 +4486,6 @@ snapshots:
       p-locate: 3.0.0
       path-exists: 3.0.0
 
-  lodash.isequal@4.5.0: {}
-
   loose-envify@1.4.0:
     dependencies:
       js-tokens: 4.0.0
@@ -4611,8 +4540,6 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  node-addon-api@8.9.2: {}
-
   node-diff3@3.2.1: {}
 
   node-releases@2.0.63: {}
@@ -4620,14 +4547,6 @@ snapshots:
   obug@3.0.0: {}
 
   on-exit-leak-free@2.1.2: {}
-
-  ow@0.28.2:
-    dependencies:
-      '@sindresorhus/is': 4.6.0
-      callsites: 3.1.0
-      dot-prop: 6.0.1
-      lodash.isequal: 4.5.0
-      vali-date: 1.0.0
 
   oxfmt@0.74.0(vite-plus@1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1)):
     dependencies:
@@ -4776,6 +4695,8 @@ snapshots:
       tslib: 2.9.1
     transitivePeerDependencies:
       - supports-color
+
+  python-random@1.0.0: {}
 
   quick-format-unescaped@4.0.4: {}
 
@@ -4982,8 +4903,6 @@ snapshots:
       react: 19.3.1
 
   util-deprecate@1.0.2: {}
-
-  vali-date@1.0.0: {}
 
   vite-plus@1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1):
     dependencies:
