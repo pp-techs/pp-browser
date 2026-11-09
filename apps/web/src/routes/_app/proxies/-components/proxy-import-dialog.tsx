@@ -43,7 +43,7 @@ export function ProxyImportDialog({ onClose }: { onClose: () => void }) {
         header={
           <DialogHeader
             title="Add proxies"
-            subtitle="Supported: http, https, socks4, socks5. Names default to host-port."
+            subtitle="Supported: http, https, socks4, socks5. Names default to host-port, suffixed -2, -3… when taken."
             onOpenChange={() => onClose()}
           />
         }

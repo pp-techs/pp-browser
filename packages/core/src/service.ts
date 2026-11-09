@@ -260,7 +260,7 @@ export class CoreService implements PpbApi {
 
   async createProxy(input: CreateProxyInput): Promise<Proxy> {
     const parsed = parseProxyUrl(input.url);
-    const name = input.name ?? `${parsed.host}-${parsed.port}`;
+    const name = input.name ?? this.#availableProxyName(`${parsed.host}-${parsed.port}`);
     if (this.#store.findProxy(name))
       throw new PpbError("CONFLICT", `Proxy name ${name} is already taken`);
     const row: ProxyRow = {
@@ -646,6 +646,16 @@ export class CoreService implements PpbApi {
     const row = this.#store.findProxy(ref);
     if (!row) throw new PpbError("NOT_FOUND", `No proxy ${ref}`);
     return row;
+  }
+
+  /**
+   * Gateways serving many proxies on one host:port (rotating/session credentials) would all
+   * derive the same name, so suffix the first free one: `host-port`, `host-port-2`, …
+   */
+  #availableProxyName(base: string): string {
+    let name = base;
+    for (let n = 2; this.#store.findProxy(name); n++) name = `${base}-${n}`;
+    return name;
   }
 
   #assertProfileNameFree(name: string): void {
