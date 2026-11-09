@@ -1,5 +1,11 @@
 # @ppb/desktop
 
+## 0.3.1
+
+### Patch Changes
+
+- b8395a8: Adding several proxies that share a gateway host:port but differ in credentials (rotating pools, per-session or per-country logins) no longer fails with "name is already taken": each line now gets the next free default name (`host-port`, `host-port-2`, …) when importing or adding without a name.
+
 ## 0.3.0
 
 No changes in this release.

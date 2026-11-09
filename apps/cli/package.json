@@ -1,6 +1,6 @@
 {
   "name": "@ppb/cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "ppb: multi-profile anti-detect browser manager (CLI, daemon, MCP, web UI)",
   "bin": {
