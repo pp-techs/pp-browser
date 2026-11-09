@@ -4,6 +4,10 @@ All notable changes to pp-browser are documented here. Each section becomes a Gi
 
 <!-- `vp run version-packages` adds each release's section from its changesets; edit it in the Version Packages PR. -->
 
+## [0.3.1] — 2026-11-09
+
+Adding several proxies that share a gateway host:port but differ in credentials (rotating pools, per-session or per-country logins) no longer fails with "name is already taken": each line now gets the next free default name (`host-port`, `host-port-2`, …) when importing or adding without a name.
+
 ## [0.3.0] — 2026-11-04
 
 Move to the official `camoufox` package and Camoufox 158.0.1 (beta.41), up from camoufox-js 0.13 and Firefox 152. `ppb setup` downloads the new browser build (about 1.3 GB). An existing profile gets a new fingerprint the first time it is launched after the update; its cookies and browsing data are kept, but sites will see a different device.
